@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="/socket.io-client-dist/socket.io.min.js"></script>
+        <script src="/winwheel.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
+        <script src="/mywheel.js"></script>
+        <style>
+            .wrapper {
+                position: fixed;
+                left: 0; right: 0;
+                top: 0; bottom: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .header {
+                height: 30px;
+                background: #000;
+                box-shadow: 0 1px 0px 1px #333;
+            }
+            .content {
+                flex: 1;
+                display: flex;
+                flex-direction: row;
+            }
+            .wheel-container {
+                height: 100%;
+                flex: 1;
+            }
+            .chat-container {
+                height: 100%;
+                border-left: 1px solid #333;
+                width: 300px;
+                overflow: auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .chatbox-message {
+                flex: 1;
+                overflow: auto;
+                box-shadow: inset 0px 0px 0.5px 0.5px #333;
+                padding: 8px;
+            }
+            .chatbox-tool {
+                height: 30px;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .chatbox-input {
+                flex: 1;
+            }
+            .chatbox-send {
+                width: auto;
+            }
+            .chatrun {
+                margin-bottom: 8px;
+            }
+            chatrun {
+                display: block;
+            }
+        </style>
+    </head>
+    <body ng-app="app">
+        <div class="wrapper" ng-controller="MainController">
+            <div class="header">
+                <span style="color: white; height: 30px; line-height: 30px;">Hi, {{username}}</span>
+                <button type="button" class="" ng-click="requestAnotherUser()">Another user</button>
+            </div>
+            <div class="content">
+                <div class="wheel-container">
+                    <canvas id="wheelcanvas" width="800" height="600"></canvas>
+                    <button type="button" ng-click="startWheel()">Start</button>
+                </div>
+                <div class="chat-container">
+                    <div class="chatbox-message">
+                        <chatrun ng-repeat="run in chatList" nickname="{{run.nick}}" message="{{run.message}}"></chatrun>
+                    </div>
+                    <form class="chatbox-tool">
+                        <input type="text" class="chatbox-input" placeholder="-- Nội dung --" ng-model="chatMessage">
+                        <button type="submit" class="chatbox-send" id="btn-send" ng-click="requestSendMessage()">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script src="/wheel.js"></script>
+    </body>
+</html>
