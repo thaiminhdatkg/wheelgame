@@ -2,12 +2,17 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
         <script src="/socket.io-client-dist/socket.io.min.js"></script>
         <script src="/winwheel.min.js"></script>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
-        <script src="/mywheel.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" />
+        
         <style>
             .wrapper {
                 position: fixed;
@@ -18,14 +23,13 @@
                 justify-content: center;
             }
             .header {
-                height: 30px;
                 background: #000;
                 box-shadow: 0 1px 0px 1px #333;
             }
             .content {
                 flex: 1;
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
             }
             .wheel-container {
                 height: 100%;
@@ -65,19 +69,30 @@
             chatrun {
                 display: block;
             }
+            .game-message {
+                color: blue;
+                font-weight: bold;
+                font-size: 36px;
+                text-align: center;
+            }
         </style>
     </head>
-    <body ng-app="app">
-        <div class="wrapper" ng-controller="MainController">
-            <div class="header">
+    <body ng-app="myApp" ng-controller="mainController">
+        <div class="wrapper">
+            <div class="header col-md-12">
                 <span style="color: white; height: 30px; line-height: 30px;">Hi, {{username}}</span>
                 <button type="button" class="" ng-click="requestAnotherUser()">Another user</button>
+                <input type="text" ng-model="chatMessage" placeholder="-- Chat chiếc --">
+                <button type="button" ng-click="requestSendMessage()">Send</button>
             </div>
             <div class="content">
-                <div class="wheel-container">
-                    <canvas id="wheelcanvas" width="800" height="600"></canvas>
-                    <button type="button" ng-click="startWheel()">Start</button>
+                <div class="game-message">
+                    {{gameMessage}}
                 </div>
+                <div class="wheel-container">
+                    <canvas id="wheelcanvas" width="800" height="600" style="width: 100%;"></canvas>
+                </div>
+                <!--
                 <div class="chat-container">
                     <div class="chatbox-message">
                         <chatrun ng-repeat="run in chatList" nickname="{{run.nick}}" message="{{run.message}}"></chatrun>
@@ -87,7 +102,36 @@
                         <button type="submit" class="chatbox-send" id="btn-send" ng-click="requestSendMessage()">Send</button>
                     </form>
                 </div>
+                -->
             </div>
+
+            
+        </div>
+        <style>
+            .dialog-mask {
+                position: fixed;
+                z-index: 9999;
+                left: 0; right: 0; top: 0; bottom: 0;
+                background: #000;
+                opacity: 0.8;
+            }
+            .dialog {
+                position: fixed;
+                top: 100px; left: 50%;
+                transform: translate(-50%, 0);
+                width: 400px;
+                height: 400px;
+                background-color: #fff;
+                opacity: 1.0;
+                z-index: 10000;
+                border-radius: 4px;
+                box-shadow: 0 0 1px 1px #333;
+            }
+        </style>
+        <div class="dialog-mask" ng-style="{'display': (showResult === true) ? 'block' : 'none'}"></div>
+        <div class="dialog" ng-style="{'display': (showResult === true) ? 'block' : 'none'}">
+            <h1 style="text-align: center;">Đã trúng</h1>
+            <div class="dialig-message" style="text-align: center; color: red; font-weight: bold; font-size: 36px;">{{wheelMessage}}</div>
         </div>
 
         <script src="/wheel.js"></script>

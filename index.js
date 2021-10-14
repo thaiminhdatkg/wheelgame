@@ -21,9 +21,9 @@ app.get('/', async (req, res) => {
     res.sendFile(__dirname + '/views/wheel.html')
 })
 
-const port = 6116
+const port = process.env.PORT | 6116
 
-server.listen(6116, () => {
+server.listen(port, () => {
     console.log(`server is running at port ${port}`)
 })
 
@@ -60,7 +60,7 @@ io.sockets.on('connection', (socket) => {
     })
     socket.on('get-new-wheel-result', () => {
         let result = randomIntFromInterval(0, wheelList.length - 1)
-        io.sockets.emit('set-new-wheel-result', { result })
+        io.sockets.emit('set-new-wheel-result', { result, user: socket.nickname })
     })
 
     socket.on('disconnect', (data) => {

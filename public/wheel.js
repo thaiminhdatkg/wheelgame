@@ -12,11 +12,29 @@ if (username === null) {
 
 socket.emit('new-user', {name: username})
 
+toastr.options = {
+    "closeButton": false,
+    "debug": false,
+    "newestOnTop": false,
+    "progressBar": false,
+    "positionClass": "toast-bottom-right",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+  }
+
 socket.on('usernames', (data) => {
     console.log(data)
 })
 
-const app = angular.module('app', [])
+const app = angular.module('myApp', [])
 var wheel = null
 
 var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6', 
@@ -30,13 +48,21 @@ var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
 		  '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3', 
 		  '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
 
-app.controller('MainController', function ($scope) {
+app.controller('mainController', function ($scope, $timeout) {
+    $scope.gameMessage = 'Quay đi'
+    $scope.isWheelRunning = false
+    $scope.showResult = false
     $scope.username = localStorage.getItem(USERNAME_CACHED)
     $scope.chatList = []
+    $scope.lastResult = {
+        user: null,
+        result: null
+    }
 
     $scope.requestSendMessage = () => {
         socket.emit('send-message', $scope.chatMessage);
         $scope.chatMessage = ''
+        toastr.info('Là sao')
     }
     $scope.requestAnotherUser = () => {
         localStorage.removeItem(USERNAME_CACHED)
@@ -44,8 +70,10 @@ app.controller('MainController', function ($scope) {
     }
 
     socket.on('new-message', (data) => {
-        $scope.chatList.push(data)
-        $scope.$apply()
+        console.log(data)
+        // $scope.chatList.push(data)
+        // $scope.$apply()
+        toastr.info(data.message, data.nickname)
     })
     //
     //
@@ -63,7 +91,22 @@ app.controller('MainController', function ($scope) {
             'type'     : 'spinToStop',
             'duration' : 10,
             'spins'    : 3,
-            'callbackFinished' : alertPrize,  // Function to call whent the spinning has stopped.
+            'callbackFinished' : (data) => {
+                $scope.isWheelRunning = false
+                wheel.stopAnimation(false);  // Stop the animation, false as param so does not call callback function.
+                wheel.rotationAngle = 0;     // Re-set the wheel angle to 0 degrees.
+                wheel.draw();                // Call draw to render changes to the wheel.
+                drawTriangle()
+                //
+                $scope.showResult = true
+                $scope.wheelMessage = data.text
+                $scope.$apply()
+                $timeout(() => {
+                    $scope.gameMessage = `${$scope.lastResult.user} đã quy vào ô ${data.text}`
+                    $scope.showResult = false
+                }, 2000)
+            },  // Function to call whent the spinning has stopped.
+            'callbackAfter': drawTriangle,
             //'callbackSound'    : playSound,   // Called when the tick sound is to be played.
             'soundTrigger'     : 'pin'        // Specify pins are to trigger the sound.
         },
@@ -74,21 +117,20 @@ app.controller('MainController', function ($scope) {
             'outerRadius': 4,
         }
     })
+    drawTriangle();
 
     wheel.animation.spins = 10;
 
     $scope.startWheel = function () {
-        //let stopAngle = wheel.getRandomForSegment(6)
-        //wheel.animation.stopAngle = stopAngle;
-        //wheel.startAnimation()
+        if ($scope.isWheelRunning === true) return
         socket.emit('get-new-wheel-result')
     }
     //
-    console.log(wheel.segments)
-    //
     socket.emit('get-new-wheel-list')
     socket.on('set-new-wheel-list', (list) => {
-        //wheel.numSegments = list.length
+        for (let i = 0; i < wheel.segments.length; i++) {
+            wheel.deleteSegment()
+        }
         list.map((v, i) => {
             wheel.addSegment({
                 fillStyle: colorArray[i],
@@ -96,11 +138,24 @@ app.controller('MainController', function ($scope) {
             })
         })
         wheel.draw()
+        //
+        drawTriangle()
     })
-    socket.on('set-new-wheel-result', (data) => {
-        let stopAngle = wheel.getRandomForSegment(data)
+    socket.on('set-new-wheel-result', ({result, user}) => {
+        $scope.$apply(() => {
+            $scope.isWheelRunning = true
+            $scope.gameMessage = `${user} đang quay, vui lòng đợi kết quả`
+            $scope.lastResult = {
+                user, result
+            }
+        })
+        let stopAngle = wheel.getRandomForSegment(result)
         wheel.animation.stopAngle = stopAngle;
         wheel.startAnimation()
+    })
+    //
+    $('#wheelcanvas').click(function () {
+        $scope.startWheel()
     })
 })
 
@@ -117,16 +172,38 @@ app.directive('chatrun', function () {
 
 function alertPrize(indicatedSegment) {
     // Display different message if win/lose/backrupt.
-    if (indicatedSegment.text == 'LOOSE TURN') {
-        alert('Sorry but you loose a turn.');
-    } else if (indicatedSegment.text == 'BANKRUPT') {
-        alert('Oh no, you have gone BANKRUPT!');
-    } else {
-        alert("You have won " + indicatedSegment.text);
-    }
+    // if (indicatedSegment.text == 'LOOSE TURN') {
+    //     alert('Sorry but you loose a turn.');
+    // } else if (indicatedSegment.text == 'BANKRUPT') {
+    //     alert('Oh no, you have gone BANKRUPT!');
+    // } else {
+    //     alert("You have won " + indicatedSegment.text);
+    // }
     //
     //
+    
+
     wheel.stopAnimation(false);  // Stop the animation, false as param so does not call callback function.
     wheel.rotationAngle = 0;     // Re-set the wheel angle to 0 degrees.
     wheel.draw();                // Call draw to render changes to the wheel.
+    drawTriangle()
 }
+
+    
+ 
+    function drawTriangle()
+    {
+        // Get the canvas context the wheel uses.
+        let ctx = wheel.ctx;
+ 
+        ctx.strokeStyle = 'navy';     // Set line colour.
+        ctx.fillStyle   = 'aqua';     // Set fill colour.
+        ctx.lineWidth   = 2;
+        ctx.beginPath();              // Begin path.
+        ctx.moveTo(350, 5);           // Move to initial position.
+        ctx.lineTo(450, 5);           // Draw lines to make the shape.
+        ctx.lineTo(400, 60);
+        ctx.lineTo(350, 5);
+        ctx.stroke();                 // Complete the path by stroking (draw lines).
+        ctx.fill();                   // Then fill.
+    }
